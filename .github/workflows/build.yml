@@ -1,0 +1,63 @@
+name: Build Sapper
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [16.x]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies & build
+        run: |
+          npm ci
+          npm run export
+
+      - name: Archive artifact
+        shell: bash
+        if: runner.os == 'Linux'
+        run: |
+          tar \
+            --dereference --hard-dereference \
+            --directory __sapper__/export/ \
+            -cvf ${{ runner.temp }}/artifact.tar \
+            --exclude=.git \
+            --exclude=.github \
+            .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: github-pages
+          path: ${{ runner.temp }}/artifact.tar
+          retention-days: 1
+
+  deploy:
+    needs: build
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Github Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
