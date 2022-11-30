@@ -1,9 +1,9 @@
-name: Build Sapper
+name: Build Eleventy
 
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   build:
@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies & build
         run: |
           npm ci
-          npm run export
+          npm run build
 
       - name: Archive artifact
         shell: bash
@@ -32,7 +32,7 @@ jobs:
         run: |
           tar \
             --dereference --hard-dereference \
-            --directory __sapper__/export/ \
+            --directory _site/ \
             -cvf ${{ runner.temp }}/artifact.tar \
             --exclude=.git \
             --exclude=.github \
